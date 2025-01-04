@@ -1,6 +1,4 @@
-import { Button } from "@material-tailwind/react";
-
 const Home = () => {
-	return <Button>Home</Button>;
+	return <div>Home</div>;
 };
 export default Home;
