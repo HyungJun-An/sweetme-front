@@ -1,0 +1,64 @@
+# Ignore artifacts:
+build
+coverage
+# 빌드 디렉토리
+dist
+
+# 환경설정 파일
+node_modules
+.env
+.env.local
+.env.*.local
+
+# 로그 파일
+*.log
+
+# Git 관련 파일
+.git
+.gitignore
+
+# 이미지나 기타 바이너리 파일
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+
+# 스타일 관련 파일 (CSS, SCSS, Tailwind config)
+*.css
+*.scss
+*.min.css
+
+# JSON 포맷팅 무시 (원하는 경우)
+package.json
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ESLint 캐시 파일
+.eslintcache
+
+# Storybook 관련 파일
+.storybook
+
+# Coverage 디렉토리
+coverage
+
+# 테스트 출력 파일
+*.snap
+
+# 특정 API 관련 파일
+__mocks__
+__snapshots__
+
+# IDE 관련 파일
+.idea
+.vscode
+
+# 기타
+public
+
+
+#shadcn 컴포넌트
+ui/

@@ -1,4 +1,6 @@
 import { Link, Outlet } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { EmojiHappy } from 'iconsax-react';
 
 const Layout = () => {
   return (
@@ -8,18 +10,22 @@ const Layout = () => {
           {/* 헤더 영역 */}
           <header className="flex items-center justify-between py-[54px]">
             <Link to="/">
-              <h1 className="text-2xl font-bold text-[#000638]">Header</h1>
+              <h1 className="text-2xl font-bold text-[#000638]">
+                <EmojiHappy className="inline-block" /> Sweet Me
+              </h1>
             </Link>
             <nav>
               <ul className="flex gap-5 text-lg text-[#605C59]">
                 <li>
-                  <Link to="/write">Write</Link>
+                  <Link to="/login">
+                    <Button>로그인</Button>
+                  </Link>
                 </li>
                 <li>
-                  <Link to="/about">About</Link>
+                  <Link to="/">로그아웃</Link>
                 </li>
                 <li>
-                  <Link to="/contact">Contact</Link>
+                  <Link to="/mypage">마이페이지</Link>
                 </li>
               </ul>
             </nav>
@@ -43,7 +49,7 @@ const Layout = () => {
             </li>
           </nav>
           <div>
-            <p className="text-[#3E3E3E]">© 2024 Sucoding. All rights reserved.</p>
+            <p className="text-[#3E3E3E]">© All rights reserved.</p>
           </div>
         </div>
       </footer>
