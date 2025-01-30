@@ -1,8 +1,12 @@
 import { Link, Outlet } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { EmojiHappy } from 'iconsax-react';
+import useLoginStore from '@/stores/useLoginStore';
 
 const Layout = () => {
+  const email = useLoginStore((state) => state.email);
+  const logout = useLoginStore((state) => state.logout);
+
   return (
     <>
       <article className="container mx-auto px-5">
@@ -16,17 +20,26 @@ const Layout = () => {
             </Link>
             <nav>
               <ul className="flex gap-5 text-lg text-[#605C59]">
-                <li>
-                  <Link to="/login">
-                    <Button>로그인</Button>
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/">로그아웃</Link>
-                </li>
-                <li>
-                  <Link to="/mypage">마이페이지</Link>
-                </li>
+                {!email ? (
+                  <li>
+                    <Link to="/login">
+                      <Button>로그인</Button>
+                    </Link>
+                  </li>
+                ) : (
+                  <>
+                    <li>
+                      <Button variant="ghost" onClick={logout}>
+                        로그아웃
+                      </Button>
+                    </li>
+                    <li>
+                      <Link to="/mypage">
+                        <Button variant="ghost">마이페이지</Button>
+                      </Link>
+                    </li>
+                  </>
+                )}
               </ul>
             </nav>
           </header>
