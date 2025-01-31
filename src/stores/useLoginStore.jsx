@@ -2,44 +2,48 @@ import { create } from 'zustand';
 import { getCookie, removeCookie, setCookie } from '@/lib/cookieUtil';
 
 // 쿠키에서 로그인 정보 로딩
-const loadMemberCookie = () => {
-  const memberInfo = getCookie('member');
+const loadUserCookie = () => {
+  const userInfo = getCookie('user');
 
   // 닉네임 처리
-  if (memberInfo && memberInfo.nickname) {
-    memberInfo.nickname = decodeURIComponent(memberInfo.nickname);
+  if (userInfo && userInfo.nickname) {
+    userInfo.nickname = decodeURIComponent(userInfo.nickname);
   }
 
   return (
-    memberInfo || {
+    userInfo || {
       id: null,
       email: '',
       nickname: '',
-      userStatus: '',
+      status: '',
+      role: '',
+      loginType: '',
     }
   );
 };
 
 const useLoginStore = create((set) => {
-  const initialState = loadMemberCookie();
+  const initialState = loadUserCookie();
 
   return {
     ...initialState,
 
     login: (payload) => {
       console.log('login....');
-      setCookie('member', JSON.stringify(payload), 1); // 쿠키 생성(1일)
+      setCookie('user', JSON.stringify(payload), 1); // 쿠키 생성(1일)
       set(payload);
     },
 
     logout: () => {
       console.log('logout...');
-      removeCookie('member'); // 쿠키 삭제
+      removeCookie('user'); // 쿠키 삭제
       set({
         id: null,
         email: '',
         nickname: '',
-        userStatus: '',
+        status: '',
+        role: '',
+        loginType: '',
       });
     },
   };

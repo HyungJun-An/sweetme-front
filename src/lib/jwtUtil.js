@@ -20,10 +20,10 @@ const refreshJWT = async (accessToken, refreshToken) => {
 const beforeReq = (config) => {
   console.log('before request...');
 
-  const memberInfo = getCookie('member');
+  const userInfo = getCookie('user');
 
-  if (!memberInfo) {
-    console.log('Member NOT FOUND');
+  if (!userInfo) {
+    console.log('USER NOT FOUND');
     return Promise.reject({
       response: {
         data: {
@@ -33,7 +33,7 @@ const beforeReq = (config) => {
     });
   }
 
-  const { accessToken } = memberInfo;
+  const { accessToken } = userInfo;
 
   // Authorization 헤더 처리
   config.headers.Authorization = `Bearer ${accessToken}`;
@@ -56,15 +56,15 @@ const beforeRes = async (res) => {
   const data = res.data;
 
   if (data && data.error === 'ERROR_ACCESS_TOKEN') {
-    const memberCookieValue = getCookie('member');
+    const userCookieValue = getCookie('user');
 
-    const result = await refreshJWT(memberCookieValue.accessToken, memberCookieValue.refreshToken);
+    const result = await refreshJWT(userCookieValue.accessToken, userCookieValue.refreshToken);
     console.log('refreshJWT RESULT: ', result);
 
-    memberCookieValue.accessToken = result.accessToken;
-    memberCookieValue.refreshToken = result.refreshToken;
+    userCookieValue.accessToken = result.accessToken;
+    userCookieValue.refreshToken = result.refreshToken;
 
-    setCookie('member', JSON.stringify(memberCookieValue), 1);
+    setCookie('user', JSON.stringify(userCookieValue), 1);
 
     // 원래의 호출
     const originalRequest = res.config;

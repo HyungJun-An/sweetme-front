@@ -2,10 +2,17 @@ import { Link, Outlet } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { EmojiHappy } from 'iconsax-react';
 import useLoginStore from '@/stores/useLoginStore';
+import useCustomLogin from '@/hooks/useCustomLogin';
 
 const Layout = () => {
   const email = useLoginStore((state) => state.email);
   const logout = useLoginStore((state) => state.logout);
+  const { moveToPath } = useCustomLogin();
+  const handleClickLogout = () => {
+    logout();
+    alert('로그아웃 되었습니다.');
+    moveToPath('/');
+  };
 
   return (
     <>
@@ -29,7 +36,7 @@ const Layout = () => {
                 ) : (
                   <>
                     <li>
-                      <Button variant="ghost" onClick={logout}>
+                      <Button variant="ghost" onClick={handleClickLogout}>
                         로그아웃
                       </Button>
                     </li>

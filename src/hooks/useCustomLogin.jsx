@@ -44,3 +44,5 @@ const useCustomLogin = () => {
 
   return { loginState, isLogin, moveToPath, moveToLogin, moveToLoginReturn, exceptionHandle };
 };
+
+export default useCustomLogin;
