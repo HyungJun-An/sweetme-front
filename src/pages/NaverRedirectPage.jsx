@@ -1,15 +1,16 @@
 import { useSearchParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import { getKakaoAccessToken, getKakaoUserWithAccessToken } from '@/api/kakaoApi';
+import { getNaverUserWithAuthCode } from '@/api/naverApi';
 import useLoginStore from '@/stores/useLoginStore';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-const KakaoRedirectPage = () => {
+const NaverRedirectPage = () => {
   const [searchParams] = useSearchParams();
   const login = useLoginStore((state) => state.login);
   const authCode = searchParams.get('code');
+  const receivedState = searchParams.get('state');
   const navigate = useNavigate();
   const [error, setError] = useState(null);
   const [loadingStatus, setLoadingStatus] = useState('인증 처리 중입니다...');
@@ -21,14 +22,20 @@ const KakaoRedirectPage = () => {
         if (processedRef.current) return;
         processedRef.current = true;
 
-        setLoadingStatus('카카오 로그인 인증 처리 중...');
-        const accessToken = await getKakaoAccessToken(authCode);
+        // state 값들을 비교해보기 위한 로그
+        const storedState = localStorage.getItem('naverState');
+        console.log('Stored state:', storedState);
+        console.log('Received state:', receivedState);
+        console.log('Are they equal?:', storedState === receivedState);
+        console.log('Stored state length:', storedState?.length);
+        console.log('Received state length:', receivedState?.length);
 
-        setLoadingStatus('사용자 정보를 가져오는 중...');
-        const userInfo = await getKakaoUserWithAccessToken(accessToken);
+        setLoadingStatus('네이버 로그인 인증 처리 중...');
+        const userInfo = await getNaverUserWithAuthCode(authCode, receivedState);
 
         login(userInfo);
         alert('로그인 되었습니다.');
+
         navigate({ pathname: '/' }, { replace: true });
       } catch (err) {
         setError(err.message || '로그인 처리 중 오류가 발생했습니다.');
@@ -47,14 +54,9 @@ const KakaoRedirectPage = () => {
     }
   }, [authCode]);
 
-  console.log('kakao redirect page');
+  console.log('naver redirect page');
 
   return (
-    // <div>
-    //   <div>KAKAO Login Redirect</div>
-    //   <div>{authCode}</div>
-    // </div>
-
     <div className="flex h-screen flex-col items-center justify-center p-4">
       {!error ? (
         <div className="space-y-4 text-center">
@@ -74,4 +76,4 @@ const KakaoRedirectPage = () => {
   );
 };
 
-export default KakaoRedirectPage;
+export default NaverRedirectPage;

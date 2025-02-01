@@ -16,6 +16,7 @@ import Study from '@/pages/study/Study';
 import StudyEdit from '@/pages/study/StudyEdit';
 import NotFound from '@/components/NotFound';
 import KakaoRedirectPage from '@/pages/KakaoRedirectPage';
+import NaverRedirectPage from '@/pages/NaverRedirectPage';
 
 const router = createBrowserRouter([
   {
@@ -36,6 +37,10 @@ const router = createBrowserRouter([
           {
             path: 'kakao',
             element: <KakaoRedirectPage />,
+          },
+          {
+            path: 'naver',
+            element: <NaverRedirectPage />,
           },
         ],
       },

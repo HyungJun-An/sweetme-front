@@ -13,7 +13,7 @@ export const getKakaoLoginLink = () => {
   return kakaoURL;
 };
 
-export const getAccessToken = async (authCode) => {
+export const getKakaoAccessToken = async (authCode) => {
   const header = {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
@@ -37,7 +37,7 @@ export const getAccessToken = async (authCode) => {
   return accessToken;
 };
 
-export const getUserWithAccessToken = async (accessToken) => {
+export const getKakaoUserWithAccessToken = async (accessToken) => {
   const res = await axios.get(`${BASE_URL}/auth/login/kakao?accessToken=${accessToken}`);
 
   return res.data;

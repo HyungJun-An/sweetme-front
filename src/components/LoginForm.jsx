@@ -5,9 +5,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getKakaoLoginLink } from '@/api/kakaoApi';
 import { Link } from 'react-router-dom';
+import { getNaverLoginLink } from '@/api/naverApi';
 
 export function LoginForm({ className, ...props }) {
-  const link = getKakaoLoginLink();
+  const handleNaverLogin = (e) => {
+    e.preventDefault();
+    const naverURL = getNaverLoginLink();
+    window.location.href = naverURL;
+  };
+
+  const handleKakaoLogin = (e) => {
+    e.preventDefault();
+    const kakaoURL = getKakaoLoginLink();
+    window.location.href = kakaoURL;
+  };
 
   return (
     <div className="mt-[calc(33vh-12rem)] flex min-h-screen justify-center bg-background p-8">
@@ -19,7 +30,7 @@ export function LoginForm({ className, ...props }) {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4">
-              <Link to={link}>
+              <a href="#" onClick={handleKakaoLogin}>
                 <Button
                   variant="outline"
                   className="h-12 w-full bg-[#FEE500] text-black hover:bg-[#FEE500]/90 hover:text-black"
@@ -32,16 +43,23 @@ export function LoginForm({ className, ...props }) {
                   </svg>
                   카카오로 로그인
                 </Button>
-              </Link>
-              <Button
-                variant="outline"
-                className="h-12 w-full bg-[#03C75A] text-white hover:bg-[#03C75A]/90 hover:text-white"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" className="mr-2 h-5 w-5">
-                  <path d="M15.792 11.111L9.277 2H4v20h5.732V11.784L16.8 22h5.2V2h-6.208v9.111z" fill="currentColor" />
-                </svg>
-                네이버로 로그인
-              </Button>
+              </a>
+
+              <a href="#" onClick={handleNaverLogin}>
+                <Button
+                  variant="outline"
+                  className="h-12 w-full bg-[#03C75A] text-white hover:bg-[#03C75A]/90 hover:text-white"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" className="mr-2 h-5 w-5">
+                    <path
+                      d="M15.792 11.111L9.277 2H4v20h5.732V11.784L16.8 22h5.2V2h-6.208v9.111z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  네이버로 로그인
+                </Button>
+              </a>
+
               <div className="text-center">
                 <span className="text-sm">
                   계정이 없으신가요?{' '}
