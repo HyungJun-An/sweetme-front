@@ -15,6 +15,8 @@ import StudyNew from '@/pages/study/StudyNew';
 import Study from '@/pages/study/Study';
 import StudyEdit from '@/pages/study/StudyEdit';
 import NotFound from '@/components/NotFound';
+import KakaoRedirectPage from '@/pages/KakaoRedirectPage';
+import NaverRedirectPage from '@/pages/NaverRedirectPage';
 
 const router = createBrowserRouter([
   {
@@ -27,7 +29,20 @@ const router = createBrowserRouter([
       },
       {
         path: 'login', //로그인 화면
-        element: <Login />,
+        children: [
+          {
+            path: '',
+            element: <Login />,
+          },
+          {
+            path: 'kakao',
+            element: <KakaoRedirectPage />,
+          },
+          {
+            path: 'naver',
+            element: <NaverRedirectPage />,
+          },
+        ],
       },
       {
         path: 'mypage',
