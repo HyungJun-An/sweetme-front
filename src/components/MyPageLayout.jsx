@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { User, BookOpen, MessageSquare, Heart, UserPlus, ChevronDown, Settings } from 'lucide-react';
 import useProfileStore from '@/stores/useProfileStore';
 import { useEffect } from 'react';
+import { getImageUrl } from '@/api/profileApi';
 
 const SidebarNavItem = ({ icon: Icon, title, href, isActive }) => {
   return (
@@ -20,6 +21,11 @@ const MyPageLayout = ({ children, currentPath = '' }) => {
   // useProfileStore 에서 profile 가져오기
   const profile = useProfileStore((state) => state.profile);
   const fetchProfile = useProfileStore((state) => state.fetchProfile);
+  const imageUrl = profile.imagePath
+    ? profile.imagePath.startsWith('blob:')
+      ? profile.imagePath
+      : getImageUrl(profile.imagePath)
+    : undefined;
 
   // 컴포넌트 마운트 시 프로필 데이터 가져오기
   useEffect(() => {
@@ -64,7 +70,7 @@ const MyPageLayout = ({ children, currentPath = '' }) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <Avatar>
-                  <AvatarImage src={profile.image} alt={profile.simpleUser.nickname} />
+                  <AvatarImage src={imageUrl} alt={profile.simpleUser.nickname} />
                   <AvatarFallback>{profile.simpleUser.nickname.slice(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div>
