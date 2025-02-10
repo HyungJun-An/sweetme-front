@@ -17,15 +17,35 @@ const StackSelector = ({ options, selectedStacks, onStackToggle, isLoading }) =>
   const [isOpen, setIsOpen] = useState(false);
   const observerTarget = useRef(null);
 
+  // 초기 데이터 설정
+  useEffect(() => {
+    if (!options.stacks) return;
+
+    const initialStacks = options.stacks;
+    setFilteredStacks(initialStacks);
+    setDisplayedStacks(initialStacks.slice(0, ITEMS_PER_PAGE));
+    setPage(1);
+  }, [options.stacks]);
+
   // 검색어에 따라 스택 필터링
   useEffect(() => {
     if (!options.stacks) return;
 
-    const filtered = options.stacks.filter((stack) => stack.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    setFilteredStacks(filtered);
-    setPage(1);
-    setDisplayedStacks(filtered.slice(0, ITEMS_PER_PAGE));
+    if (searchTerm === '') {
+      // 검색어가 없으면 전체 스택 표시
+      setFilteredStacks(options.stacks);
+    } else {
+      // 검색어가 있으면 필터링된 결과 표시
+      const filtered = options.stacks.filter((stack) => stack.name.toLowerCase().includes(searchTerm.toLowerCase()));
+      setFilteredStacks(filtered);
+    }
   }, [searchTerm, options.stacks]);
+
+  // filteredStacks 가 바뀔 때 displayedStacks 초기화
+  useEffect(() => {
+    setDisplayedStacks(filteredStacks.slice(0, ITEMS_PER_PAGE));
+    setPage(1);
+  }, [filteredStacks]);
 
   // 무한 스크롤 구현
   useEffect(() => {
