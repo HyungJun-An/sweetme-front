@@ -4,9 +4,10 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Globe } from 'lucide-react';
-import { getMyProfile } from '@/api/profileApi';
+import { getImageUrl, getMyProfile } from '@/api/profileApi';
 import useProfileStore from '@/stores/useProfileStore';
 import { Link } from 'react-router-dom';
+import ProfileAvatar from './ProfileAvatar';
 
 const Profile = () => {
   const profile = useProfileStore((state) => state.profile);
@@ -21,32 +22,27 @@ const Profile = () => {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-1">
       <Card className="mx-auto max-w-4xl">
         <CardHeader className="space-y-6">
           <div className="flex items-start justify-between">
             <div className="flex gap-6">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile.imagePath} alt={profile.simpleUser.nickname} />
-                <AvatarFallback>{profile.simpleUser.nickname.slice(0, 2)}</AvatarFallback>
-              </Avatar>
-              <div className="space-y-2">
+              <ProfileAvatar imagePath={profile.imagePath} nickname={profile.simpleUser.nickname} />
+              <div className="flex flex-col items-start">
                 <CardTitle className="text-2xl">{profile.simpleUser.nickname}</CardTitle>
                 {profile.simplePositions.length > 0 && (
-                  <Badge variant="secondary" className="text-sm">
+                  <Badge variant="secondary" className="mt-2 text-sm">
                     {profile.simplePositions[0].name}
                   </Badge>
                 )}
-                <div className="flex gap-2">
-                  {profile.profileUrl && (
-                    <Button variant="ghost" className="flex h-8 items-center gap-2" asChild>
-                      <a href={profile.profileUrl} target="_blank" rel="noopener noreferrer">
-                        <Globe className="h-4 w-4" />
-                        <span className="text-sm">{profile.profileUrl}</span>
-                      </a>
-                    </Button>
-                  )}
-                </div>
+                {profile.profileUrl && (
+                  <Button variant="ghost" className="mt-2 h-8 px-0" asChild>
+                    <a href={profile.profileUrl} target="_blank" rel="noopener noreferrer">
+                      <Globe className="mr-2 h-4 w-4" />
+                      <span className="text-sm">{profile.profileUrl}</span>
+                    </a>
+                  </Button>
+                )}
               </div>
             </div>
             <Link to={'/mypage/profile/edit'}>

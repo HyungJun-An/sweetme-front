@@ -11,8 +11,15 @@ import { Upload } from 'lucide-react';
 import useProfileStore from '@/stores/useProfileStore';
 import { getImageUrl, getProfileOptions, updateMyProfile } from '@/api/profileApi';
 import StackSelector from './StackSelector';
+import ProfileAvatar from './ProfileAvatar';
 
 const ProfileEdit = () => {
+  const [selectedImage, setSelectedImage] = useState(null); // 새로 선택된 이미지 파일을 저장할 state 추가
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const MIN_DIMENSION = 320; // 최소 320*320
+  const MAX_DIMENSION = 2048; // 최대 2048*2048
+  const RECOMMENDED_DIMENSION = 500; // 권장 500*500
+  const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
   const navigate = useNavigate();
   const profile = useProfileStore((state) => state.profile);
   const [isLoading, setIsLoading] = useState(true);
@@ -105,10 +112,51 @@ const ProfileEdit = () => {
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // TODO: 이미지 업로드 로직 구현
-      console.log('Selected file: ', file);
+    if (!file) return;
+
+    // 파일 크기 검사
+    if (file.size > MAX_FILE_SIZE) {
+      alert('파일 크기는 5MB를 초과할 수 없습니다.');
+      e.target.value = '';
+      return;
     }
+
+    // 파일 타입 검사
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      alert('JPG, PGN, GIF 파일만 업로드 가능합니다.');
+      e.target.value = '';
+      return;
+    }
+
+    // 이미지 크기 검사
+    const img = new Image();
+    img.src = URL.createObjectURL(file); // 미리보기를 위한 URL 생성
+    img.onload = () => {
+      if (img.width < MIN_DIMENSION || img.height < MIN_DIMENSION) {
+        alert(`이미지 크기는 최소 ${MIN_DIMENSION}x${MIN_DIMENSION} 픽셀이어야 합니다.`);
+        e.target.value = '';
+        URL.revokeObjectURL(img.src);
+        return;
+      }
+      if (img.width > MAX_DIMENSION || img.height > MAX_DIMENSION) {
+        alert(`이미지 크기는 최대 ${MAX_DIMENSION}x${MAX_DIMENSION} 픽셀을 초과할 수 없습니다.`);
+        e.target.value = '';
+        URL.revokeObjectURL(img.src);
+        return;
+      }
+    };
+
+    setSelectedImage(file);
+    setFormData((prev) => ({
+      ...prev,
+      imagePath: img.src,
+    }));
+
+    img.onerror = () => {
+      alert('이미지 파일을 읽는 중 오류가 발생했습니다.');
+      e.target.value = '';
+      URL.revokeObjectURL(img.src);
+    };
   };
 
   const handleChange = (e) => {
@@ -133,8 +181,27 @@ const ProfileEdit = () => {
     e.preventDefault();
     try {
       setIsLoading(true);
-      console.log('formData: ', formData);
-      await updateMyProfile(formData);
+
+      // 기존 profileData 형식 그대로 유지
+      const profileData = {
+        id: formData.id,
+        description: formData.description,
+        imagePath: formData.imagePath,
+        profileUrl: formData.profileUrl,
+        simplePositions: formData.simplePositions,
+        simpleStacks: formData.simpleStacks,
+        simpleUser: formData.simpleUser,
+      };
+
+      console.log('profileData: ', profileData);
+
+      // 새로운 이미지가 선택된 경우에만 이미지 파일 추가
+      if (selectedImage) {
+        await updateMyProfile(profileData, selectedImage);
+      } else {
+        await updateMyProfile(profileData);
+      }
+
       alert('프로필이 정상적으로 수정되었습니다.');
       navigate('/mypage/profile');
     } catch (error) {
@@ -145,17 +212,18 @@ const ProfileEdit = () => {
     }
   };
 
+  const handleCancel = () => {
+    navigate('/mypage/profile');
+  };
+
   return (
-    <div className="container mx-auto py-8">
-      <Card className="mx-auto max-w-2xl">
+    <div className="container mx-auto py-1">
+      <Card className="mx-auto max-w-4xl">
         <CardHeader>
           <CardTitle>프로필 수정</CardTitle>
-          <p className="pt-2 text-sm text-muted-foreground">다른 사용자들에게 보여질 프로필 정보입니다.</p>
-          <div className="mt-4 flex items-center gap-4 pt-5">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={getImageUrl(profile.imagePath)} alt={profile.simpleUser.nickName} />
-              <AvatarFallback>{profile.simpleUser.nickName?.slice(0, 2)}</AvatarFallback>
-            </Avatar>
+          {/* <p className="pt-2 text-sm text-muted-foreground">다른 사용자들에게 보여질 프로필 정보입니다.</p> */}
+          <div className="mt-4 flex items-center gap-6 pt-10">
+            <ProfileAvatar imagePath={formData.imagePath} nickname={profile.simpleUser.nickname} />
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">프로필 이미지를 변경하려면 아래 버튼을 클릭하세요</div>
               <div className="flex items-center gap-4">
@@ -163,7 +231,20 @@ const ProfileEdit = () => {
                   <Upload className="mr-2 h-4 w-4" />
                   이미지 업로드
                 </Button>
-                <input type="file" id="imageUpload" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                <input
+                  type="file"
+                  id="imageUpload"
+                  className="hidden"
+                  accept=".jpg, .jpeg, .png, .gif"
+                  onChange={handleImageUpload}
+                />
+              </div>
+              <div className="text-xs text-muted-foreground">
+                • 권장 크기: 500x500 px
+                <br />• 최소 크기: 320x320 px
+                <br />• 최대 크기: 2048x2048 px
+                <br />• 최대 용량: 5MB
+                <br />• 지원 형식: JPG, PNG, GIF
               </div>
             </div>
           </div>
@@ -257,7 +338,7 @@ const ProfileEdit = () => {
             </div>
 
             <div className="flex justify-end space-x-4 pt-4">
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" onClick={handleCancel}>
                 취소
               </Button>
               <Button type="submit">저장하기</Button>
