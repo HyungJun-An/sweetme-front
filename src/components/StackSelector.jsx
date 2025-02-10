@@ -1,77 +1,69 @@
-// StackSelector.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 20; // 한 번에 로드할 아이템 수
 
 const StackSelector = ({ options, selectedStacks, onStackToggle, isLoading }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [displayedStacks, setDisplayedStacks] = useState([]);
-  const [page, setPage] = useState(1);
   const [filteredStacks, setFilteredStacks] = useState([]);
+  const [displayedStacks, setDisplayedStacks] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
-  const observerTarget = useRef(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const observer = useRef();
 
   // 초기 데이터 설정
   useEffect(() => {
     if (!options.stacks) return;
-
-    const initialStacks = options.stacks;
-    setFilteredStacks(initialStacks);
-    setDisplayedStacks(initialStacks.slice(0, ITEMS_PER_PAGE));
+    const filtered = filterStacks(options.stacks, searchTerm);
+    setFilteredStacks(filtered);
+    setDisplayedStacks(filtered.slice(0, ITEMS_PER_PAGE));
     setPage(1);
-  }, [options.stacks]);
+    setHasMore(filtered.length > ITEMS_PER_PAGE);
+  }, [options.stacks, searchTerm]);
 
-  // 검색어에 따라 스택 필터링
-  useEffect(() => {
-    if (!options.stacks) return;
+  // 스택 필터링 함수
+  const filterStacks = (stacks, term) => {
+    return term === '' ? stacks : stacks.filter((stack) => stack.name.toLowerCase().includes(term.toLowerCase()));
+  };
 
-    if (searchTerm === '') {
-      // 검색어가 없으면 전체 스택 표시
-      setFilteredStacks(options.stacks);
-    } else {
-      // 검색어가 있으면 필터링된 결과 표시
-      const filtered = options.stacks.filter((stack) => stack.name.toLowerCase().includes(searchTerm.toLowerCase()));
-      setFilteredStacks(filtered);
-    }
-  }, [searchTerm, options.stacks]);
+  const lastStackElementRef = useCallback(
+    (node) => {
+      if (isLoading) return;
+      if (observer.current) observer.current.disconnect();
 
-  // filteredStacks 가 바뀔 때 displayedStacks 초기화
-  useEffect(() => {
-    setDisplayedStacks(filteredStacks.slice(0, ITEMS_PER_PAGE));
-    setPage(1);
-  }, [filteredStacks]);
-
-  // 무한 스크롤 구현
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && displayedStacks.length < filteredStacks.length) {
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
           const nextPage = page + 1;
           const start = (nextPage - 1) * ITEMS_PER_PAGE;
           const end = start + ITEMS_PER_PAGE;
 
           setDisplayedStacks((prev) => [...prev, ...filteredStacks.slice(start, end)]);
           setPage(nextPage);
+          setHasMore(filteredStacks.length > end);
         }
-      },
-      { threshold: 0.1, root: null, rootMargin: '0px' },
-    );
+      });
 
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-
-    return () => observer.disconnect();
-  }, [displayedStacks.length, filteredStacks, page]);
+      if (node) observer.current.observe(node);
+    },
+    [isLoading, hasMore, page, filteredStacks],
+  );
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
+    setPage(1);
   };
 
   // 선택된 스택들 표시
@@ -106,6 +98,9 @@ const StackSelector = ({ options, selectedStacks, onStackToggle, isLoading }) =>
       <DialogContent className="w-full max-w-2xl">
         <DialogHeader>
           <DialogTitle>기술 스택 선택</DialogTitle>
+          <DialogDescription>
+            사용하시는 기술 스택을 선택해주세요. 검색을 통해 원하는 스택을 찾을 수 있습니다.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="relative mb-4">
@@ -120,9 +115,10 @@ const StackSelector = ({ options, selectedStacks, onStackToggle, isLoading }) =>
                 <span>데이터를 불러오는 중...</span>
               </div>
             ) : (
-              displayedStacks.map((stack) => (
+              displayedStacks.map((stack, index) => (
                 <Button
                   key={stack.id}
+                  ref={index === displayedStacks.length - 1 ? lastStackElementRef : null}
                   type="button"
                   variant="outline"
                   className={`flex items-center gap-2 ${
@@ -138,7 +134,11 @@ const StackSelector = ({ options, selectedStacks, onStackToggle, isLoading }) =>
                 </Button>
               ))
             )}
-            <div ref={observerTarget} className="h-4 w-full" />
+            {!isLoading && hasMore && (
+              <div className="w-full p-4 text-center text-muted-foreground">
+                <span>더 많은 스택 불러오는 중...</span>
+              </div>
+            )}
           </div>
         </ScrollArea>
       </DialogContent>
