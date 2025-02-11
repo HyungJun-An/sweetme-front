@@ -15,8 +15,10 @@ import StudyNew from '@/pages/study/StudyNew';
 import Study from '@/pages/study/Study';
 import StudyEdit from '@/pages/study/StudyEdit';
 import NotFound from '@/components/NotFound';
-import KakaoRedirectPage from '@/pages/KakaoRedirectPage';
-import NaverRedirectPage from '@/pages/NaverRedirectPage';
+import KakaoRedirectPage from '@/pages/auth/KakaoRedirectPage';
+import NaverRedirectPage from '@/pages/auth/NaverRedirectPage';
+import Profile from '@/components/Profile';
+import ProfileEdit from '@/components/ProfileEdit';
 
 const router = createBrowserRouter([
   {
@@ -46,8 +48,27 @@ const router = createBrowserRouter([
       },
       {
         path: 'mypage',
-        element: <MyPage />,
-        children: [],
+        children: [
+          {
+            path: '',
+            element: <MyPage />,
+            children: [
+              {
+                path: 'profile',
+                children: [
+                  {
+                    path: '',
+                    element: <Profile />,
+                  },
+                  {
+                    path: 'edit',
+                    element: <ProfileEdit />,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
       },
       {
         path: 'profile/',
