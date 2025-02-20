@@ -1,9 +1,12 @@
-import React, {useState, useRef, useEffect, useContext} from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios'
+import useLoginStore from '@/stores/useLoginStore.jsx';
+import {getOtherProfile} from "@/api/profileApi.js";
+import ProfileAvatar from "@/components/ProfileAvatar.jsx";
 
 const Chat = () => {
-	// const { user } = useContext(AuthContext);
+	const userId = useLoginStore((state) => state.id);
+	const nickname = useLoginStore((state) => state.nickname);
 	const { studyId } = useParams();
 	const ws = useRef(null);
 	const connectAttempted = useRef(false);
@@ -12,11 +15,49 @@ const Chat = () => {
 	const [page, setPage] = useState(0);
 	const scrollRef = useRef(null);
 	const [hasMore, setHasMore] = useState(true);
-
-	// 초기 메시지 로드 완료 상태를 추적하기 위한 state 추가
 	const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+	const [userProfiles, setUserProfiles] = useState({});
 
-	// fetchMessages 함수 수정
+	useEffect(() => {
+		const fetchUserProfiles = async () => {
+			try {
+				// 1️⃣ 유저 ID 및 프로필 ID 리스트 조회
+				const response = await fetch(`http://localhost:8080/studies/${studyId}/chat/member`);
+				const usersData = await response.json(); // [{ userId: 1, profileId: 10 }, { userId: 2, profileId: 20 }, ...]
+
+				if (!usersData.length) {
+					console.log("프로필 조회 시 에러 발생!");
+					return;
+				}
+
+				// 2️⃣ 각 프로필 정보를 조회
+				const profilePromises = usersData.map(({ profileId }) => getOtherProfile(profileId));
+				const profilesData = await Promise.all(profilePromises);
+
+				// 3️⃣ userId를 키로 한 객체 생성
+				const profiles = {};
+				usersData.forEach(({ userId, profileId }, index) => {
+					profiles[userId] = { profileId, ...profilesData[index] }; // userId 기준으로 프로필 저장
+				});
+
+				// 4️⃣ 상태 업데이트
+				setUserProfiles(profiles);
+
+				console.log("✅ 유저 프로필 정보 저장 완료:", profiles);
+			} catch (error) {
+				console.error("❌ Failed to fetch user profiles:", error);
+			}
+		};
+		fetchUserProfiles();
+	}, [studyId]);
+
+	useEffect(() => {
+		console.log("📌 업데이트된 userProfiles:", userProfiles);
+	}, [userProfiles]);
+
+
+
+	// 메시지 불러오기
 	const fetchMessages = async (pageNum) => {
 		try {
 			const size = 10;
@@ -29,21 +70,23 @@ const Chat = () => {
 				return;
 			}
 
-			setMessages(prev => {
+			setMessages((prev) => {
 				const allMessages = [...prev];
-				chatData.content.forEach(newMsg => {
-					if (!allMessages.some(existingMsg =>
-						existingMsg.createdAt === newMsg.createdAt &&
-						existingMsg.message === newMsg.message
-					)) {
+				chatData.content.forEach((newMsg) => {
+					if (
+						!allMessages.some(
+							(existingMsg) =>
+								existingMsg.createdAt === newMsg.createdAt && existingMsg.message === newMsg.message
+						)
+					) {
 						allMessages.push(newMsg);
 					}
 				});
-				const sortedMessages = allMessages.sort((a, b) => {
-					return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-				});
 
-				// pageNum이 0일 때(초기 로드)만 initialLoadComplete를 true로 설정
+				const sortedMessages = allMessages.sort(
+					(a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+				);
+
 				if (pageNum === 0) {
 					setInitialLoadComplete(true);
 				}
@@ -55,7 +98,6 @@ const Chat = () => {
 		}
 	};
 
-// 초기 로드 완료 시 스크롤을 맨 아래로 이동
 	useEffect(() => {
 		if (initialLoadComplete && scrollRef.current) {
 			scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -74,7 +116,7 @@ const Chat = () => {
 
 		ws.current.onmessage = (event) => {
 			const receivedMessage = JSON.parse(event.data);
-			setMessages(prevMessages => {
+			setMessages((prevMessages) => {
 				const newMessages = [...prevMessages, receivedMessage];
 				requestAnimationFrame(() => {
 					scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -103,13 +145,11 @@ const Chat = () => {
 	const handleScroll = async (e) => {
 		const { scrollTop } = e.target;
 		if (scrollTop === 0 && hasMore) {
-			// 이전 높이 저장
 			const prevHeight = scrollRef.current.scrollHeight;
 
-			setPage(prev => {
+			setPage((prev) => {
 				const nextPage = prev + 1;
 				fetchMessages(nextPage).then(() => {
-					// DOM 업데이트 후에 스크롤 위치 조정
 					requestAnimationFrame(() => {
 						const newHeight = scrollRef.current.scrollHeight;
 						scrollRef.current.scrollTop = newHeight - prevHeight;
@@ -126,20 +166,13 @@ const Chat = () => {
 
 		const messageData = {
 			studyId: studyId,
-			userId: 1, //user.id 추후에 Spring Security를 통해서 유저 아이디를 조회 하여 가져와야 함
-			nickname: "nickname", // user.nickname
+			userId: userId,
+			nickname: nickname,
 			message: message,
-			createdAt: new Date().toISOString()
+			createdAt: new Date().toISOString(),
 		};
 
 		ws.current.send(JSON.stringify(messageData));
-		setMessages(prevMessages => {
-			const newMessages = [...prevMessages, messageData];
-			requestAnimationFrame(() => {
-				scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-			});
-			return newMessages;
-		});
 		setMessage('');
 	};
 
@@ -147,9 +180,10 @@ const Chat = () => {
 		const date = new Date(timeString);
 		return date.toLocaleTimeString('ko-KR', {
 			hour: '2-digit',
-			minute: '2-digit'
+			minute: '2-digit',
 		});
 	};
+
 
 	return (
 		<div className="flex h-screen flex-col bg-gray-100">
@@ -157,25 +191,17 @@ const Chat = () => {
 				<h1 className="text-xl font-semibold">스터디 채팅방 {studyId}</h1>
 			</div>
 
-			<div
-				ref={scrollRef}
-				onScroll={handleScroll}
-				className="flex-1 space-y-4 overflow-y-auto p-4"
-			>
+			<div ref={scrollRef} onScroll={handleScroll} className="flex-1 space-y-4 overflow-y-auto p-4">
 				{messages.map((msg, index) => (
-					<div key={index} className={`flex ${msg.userId === 1 ? 'justify-end' : 'justify-start'}`}>
-						<div
-							className={`max-w-[70%] rounded-lg p-3 ${
-								msg.userId === 1 ? 'rounded-br-none bg-blue-500 text-white' : 'rounded-bl-none bg-white text-gray-800'
-							}`}
-						>
-							{msg.userId !== 1 && (
-								<div className="text-sm font-semibold mb-1">
-									{msg.nickname}
-								</div>
-							)}
+					<div key={index} className={`flex items-end ${msg.userId === userId ? 'justify-end' : 'justify-start'}`}>
+						{msg.userId !== userId && (
+							<ProfileAvatar imagePath={userProfiles[msg.userId]?.imagePath} nickname={msg.nickname}/>
+						)}
+
+						<div className={`max-w-[70%] rounded-lg p-3 ${msg.userId === userId ? 'rounded-br-none bg-blue-500 text-white' : 'rounded-bl-none bg-white text-gray-800'}`}>
+							{msg.userId !== userId && <div className="text-sm font-semibold mb-1">{msg.nickname}</div>}
 							<p className="break-words">{msg.message}</p>
-							<div className={`text-xs mt-1 ${msg.userId === 1 ? 'text-blue-100' : 'text-gray-500'}`}>
+							<div className={`text-xs mt-1 ${msg.userId === userId ? 'text-blue-100' : 'text-gray-500'}`}>
 								{msg.createdAt && formatTime(msg.createdAt)}
 							</div>
 						</div>
@@ -185,19 +211,8 @@ const Chat = () => {
 
 			<form onSubmit={handleSubmit} className="border-t bg-white p-4">
 				<div className="flex space-x-2">
-					<input
-						type="text"
-						value={message}
-						onChange={(e) => setMessage(e.target.value)}
-						placeholder="메시지를 입력하세요..."
-						className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
-					/>
-					<button
-						type="submit"
-						className="rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 focus:outline-none"
-					>
-						전송
-					</button>
+					<input type="text" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="메시지를 입력하세요..." className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none" />
+					<button type="submit" className="rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 focus:outline-none">전송</button>
 				</div>
 			</form>
 		</div>
